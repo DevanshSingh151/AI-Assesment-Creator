@@ -32,7 +32,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
     },
     {
       label: 'My Groups',
-      href: '#',
+      href: '/groups',
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -44,7 +44,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
     },
     {
       label: 'Assignments',
-      href: '/',
+      href: '/assignments',
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -57,7 +57,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
     },
     {
       label: "AI Teacher's Toolkit",
-      href: '#',
+      href: '/toolkit',
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
@@ -67,7 +67,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
     },
     {
       label: 'My Library',
-      href: '#',
+      href: '/library',
       badge: 32,
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -103,8 +103,8 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
           <div className="sidebar-brand">
             <div className="sidebar-brand-icon">
               {/* stylized bold V */}
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}>
-                <polyline points="4 6 12 18 20 6" />
+              <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 22, height: 22, color: 'white' }}>
+                <path d="M2 3h4.5l5.5 12.5L17.5 3H22L14.5 19.5h-5L2 3z" />
               </svg>
             </div>
             <div className="sidebar-brand-text">
@@ -120,9 +120,10 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
               router.push('/create');
             }}
           >
-            {/* Sparkle icon */}
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2v20M2 12h20M12 2l3.5 6.5L22 12l-6.5 3.5L12 22l-3.5-6.5L2 12l6.5-3.5L12 2z" />
+            {/* Sparkle plus icon */}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             <span>Create Assignment</span>
           </button>
@@ -161,7 +162,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
               <span className="sidebar-nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3" />
-                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
               </span>
               <span className="sidebar-nav-label">Settings</span>

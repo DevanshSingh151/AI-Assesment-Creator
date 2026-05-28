@@ -1,17 +1,22 @@
-# VedaAI — AI Assessment Creator
+<div align="center">
+  <img src="frontend/public/teacher_avatar.png" width="120" height="120" style="border-radius: 50%; box-shadow: 0 8px 30px rgba(0,0,0,0.15);" alt="VedaAI Logo" />
 
-> An AI-powered assessment generation platform that enables teachers to create structured question papers using Google Gemini AI, featuring real-time generation tracking via WebSockets and an automated local process fallback queue.
+  # ✦ VedaAI — AI Assessment Creator
 
-[![VedaAI](https://img.shields.io/badge/VedaAI-Assessment%20Creator-7c3aed?style=for-the-badge)](#)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![Express](https://img.shields.io/badge/Express-4-green?style=flat-square&logo=express)](https://expressjs.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-8-green?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
-[![Redis](https://img.shields.io/badge/Redis-7-red?style=flat-square&logo=redis)](https://redis.io/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+  > An AI-powered assessment generation platform that enables teachers to create structured question papers using Google Gemini AI, featuring real-time generation tracking via WebSockets and an automated local process fallback queue.
+
+  [![Next.js 15](https://img.shields.io/badge/Next.js-15.x-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+  [![Express 4](https://img.shields.io/badge/Express-4.x-green?style=for-the-badge&logo=express)](https://expressjs.com/)
+  [![MongoDB](https://img.shields.io/badge/MongoDB-8.x-mediumseagreen?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/)
+  [![Redis](https://img.shields.io/badge/Redis-7.x-red?style=for-the-badge&logo=redis)](https://redis.io/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+</div>
 
 ---
 
 ## 🏗️ System Architecture & Data Flow
+
+Below is the architectural diagram mapping the client-server interactions, AI pipeline, and fail-safe queuing mechanism:
 
 ```mermaid
 graph TD
@@ -68,63 +73,87 @@ graph TD
     WS_Client --> UI
 ```
 
-### The Fail-Safe Generation Engine (Queue Fallback)
+---
 
-To handle virtual machine connection limits and firewall blocks (common in WSL2 and VPN setups), the backend employs a hybrid **Fail-Safe Queuing Engine**:
+## 🛠️ Key Engine Details
 
-1. **Attempt BullMQ:** The API tries to enqueue the assessment job to Redis via BullMQ with a `1.5s` timeout limit.
-2. **Local Fallback:** If Redis is down or times out, the server triggers a **local background runner** in the Node thread itself. It runs the exact same prompts, processes the Gemini 2.5-flash response, saves it to MongoDB, and pushes live event updates to Socket.IO.
-3. **Seamless Client Transition:** The frontend remains completely unaware of whether BullMQ or the local background process ran the task, since both update the status in MongoDB and emit WebSocket events (`generation:progress`, `generation:completed`) seamlessly.
+### ⚡ The Fail-Safe Generation Engine (Queue Fallback)
+To ensure maximum availability (even during local Redis setup delays or VM network bridges):
+1. **Queue Attempt:** The backend tries to dispatch background generation tasks to Redis using **BullMQ**.
+2. **Graceful Fallback:** If Redis is down, times out, or triggers connection errors, the engine launches an asynchronous **Local In-Memory Runner** in the Node.js thread.
+3. **Transparent Sync:** Both runners share identical interfaces—updating status in MongoDB and pushing live percentage updates via WebSockets. The teacher experience is completely uninterrupted.
+
+### 📄 Intelligent Prompt Compiler & PDF Builder
+- **Dynamic Prompts:** Consolidates grade-level, duration, marks, question distributions, and uploaded source materials into an instructional prompt.
+- **Strict Schema Enforcement:** Leverages Gemini 2.5 Flash API with JSON-mode constraint definitions to enforce compliant question papers.
+- **Clean PDF Layouts:** Renders beautiful, formatted question sheets using `jsPDF` with standard exam outlines, student name grids, difficulty labels, and distinct mark tags.
 
 ---
 
-## 🛠️ Technology Stack
-
-| Layer | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Frontend** | Next.js 15, React, TypeScript | Main client layout and routing |
-| **State Management** | Zustand | Lightweight client stores (form caching, notification tracking) |
-| **Real-time** | Socket.IO Client | Real-time WebSocket listener for generation stages |
-| **Styling** | Vanilla CSS (`globals.css`) | Curated premium high-contrast dark theme with glassmorphic cards |
-| **Backend** | Express.js, Node.js, TypeScript | Core REST endpoints & WebSocket server |
-| **Database** | MongoDB + Mongoose | Schema definitions for assignments and question sheets |
-| **Caching/Queue** | Redis + BullMQ | Background asynchronous worker queues |
-| **AI Models** | Google Gemini 2.5 Flash | Structured exam paper prompt generation |
-| **PDF Rendering** | jsPDF | Print-ready PDF compiler |
+## 🎨 Premium UI/UX Design System
+The client-side layout is built with custom CSS (no external Tailwind classes) following high-fidelity specs:
+- **White Sidebar navigation:** Clean `#ffffff` panel containing the stylized brand icon, capsule outline CTA, menu badges, and a custom profile card showing the school details.
+- **Dark Mode Workspace:** Black background (#000000) contrasting with glassmorphic input cards.
+- **Cream Document View:** The output page renders papers inside a soft cream-white sheet component floating on the dark layout to feel like physical sheets.
+- **Micro-animations:** Glow highlights on select boxes, slide-ups on card grids, and linear checkmarks on generation tasks.
 
 ---
 
-## 🚀 Installation & Running Locally
+## 📁 Directory Structures
 
-### Prerequisites
+```text
+AI-Assessment-Creator/
+├── frontend/                    # Next.js 15 Client Application
+│   ├── public/                  # Avatars and static SVGs
+│   ├── src/
+│   │   ├── app/                 # Next.js App Router (create, dashboard, toolkit, library)
+│   │   ├── components/          # Layout, forms, and preview sheets
+│   │   ├── store/               # Zustand hooks state store
+│   │   └── hooks/               # Custom Socket.IO sync hook
+│   └── globals.css              # Dark/light theme custom stylesheet
+│
+├── backend/                     # Express.js API Backend
+│   ├── src/
+│   │   ├── config/              # Database & Redis client boot
+│   │   ├── models/              # MongoDB Schema
+│   │   ├── routes/              # Express Router
+│   │   ├── queues/              # BullMQ & Local runner worker tasks
+│   │   └── services/            # Gemini prompt compiler and PDF builder
+│   └── tsconfig.json
+│
+├── docker-compose.yml           # Local Redis image launcher
+└── README.md                    # System documentation
+```
+
+---
+
+## 🚀 Running Locally
+
+### 1. Prerequisites
 - **Node.js** >= 18.x
-- **MongoDB** running locally (`mongodb://localhost:27017/vedaai`)
-- **Redis** running locally or via Docker on port `6379`
+- **MongoDB** running locally on default port `27017`
+- **Redis** running locally (or via Docker) on port `6379`
 - **Google Gemini API Key**
 
----
+### 2. Startup Guide
 
-### Step-by-Step Setup
-
-#### 1. Clone the repository
+#### Clone and Initialize
 ```bash
 git clone https://github.com/DevanshSingh151/AI-Assesment-Creator.git
 cd AI-Assesment-Creator
 ```
 
-#### 2. Start Redis Container
-If you have Docker installed:
+#### Run Redis via Docker
 ```bash
 docker-compose up -d
 ```
-Otherwise, ensure your local Redis service is active on port `6379`.
 
-#### 3. Backend Setup
-1. Open the backend directory and configure the environment variables:
+#### Configure and Run Backend
+1. Enter backend folder:
    ```bash
    cd backend
    ```
-2. Check or create a `.env` file containing:
+2. Setup environment variables in a `.env` file:
    ```env
    PORT=5000
    MONGODB_URI=mongodb://localhost:27017/vedaai
@@ -133,86 +162,44 @@ Otherwise, ensure your local Redis service is active on port `6379`.
    GEMINI_API_KEY=AIzaSyBPcgh7rTAgjspnC1e58UVRmkiJFI2K75o
    CORS_ORIGIN=http://localhost:3000
    ```
-3. Install dependencies and start the watcher:
+3. Install and run in development mode:
    ```bash
    npm install
    npm run dev
    ```
 
-#### 4. Frontend Setup
-1. Open a new terminal in the frontend directory:
+#### Configure and Run Frontend
+1. Open a new shell and enter the frontend folder:
    ```bash
    cd ../frontend
    ```
-2. Install packages and start Next.js dev server:
+2. Build dependencies and start:
    ```bash
    npm install
    npm run dev
    ```
-3. Open your browser and navigate to `http://localhost:3000`.
+3. Open `http://localhost:3000` to interact with the platform.
 
 ---
 
-## 📡 API Reference
+## 📡 API Reference & Socket Events
 
-### Express API endpoints (`http://localhost:5000/api`)
+### API Endpoints (`http://localhost:5000/api`)
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/assignments` | Fetches all created assessments for the dashboard |
-| `POST` | `/assignments` | Creates an assignment and starts generation (BullMQ/Local fallback) |
-| `GET` | `/assignments/:id` | Returns assignment document and paper structure |
-| `POST` | `/assignments/:id/regenerate` | Triggers prompt regeneration |
-| `GET` | `/assignments/:id/pdf` | Returns compile jsPDF downloadable file |
-| `GET` | `/health` | Health check endpoint |
+| Method | Endpoint | Payload | Response |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/assignments` | Multipart form (fields + file) | `{ success, assignmentId, jobId }` |
+| `GET` | `/assignments` | None | `Array<IAssignment>` |
+| `GET` | `/assignments/:id` | None | `IAssignment` |
+| `POST` | `/assignments/:id/regenerate` | None | `{ success, jobId }` |
+| `GET` | `/assignments/:id/pdf` | None | Renders PDF stream download |
 
-### WebSocket Messages (Socket.IO Room `assignment:<id>`)
+### WebSocket Events (Room `assignment:<id>`)
 
-* `join:assignment`: Joins the socket room for real-time progress.
-* `generation:progress`: Emits `{ message, status, progress }` updates.
-* `generation:completed`: Emits `{ assignmentId, paper }` when questions are ready.
-* `generation:failed`: Emits `{ error }` on system failures.
-
----
-
-## 📁 Project Structure
-
-```text
-AI-Assessment-Creator/
-├── frontend/                    # Next.js 15 Client Application
-│   ├── public/                  # Static assets (icons, avatars)
-│   ├── src/
-│   │   ├── app/                 # App Router pages
-│   │   │   ├── create/          # Assessment creator form
-│   │   │   ├── assessment/[id]/ # Document view page
-│   │   │   └── page.tsx         # Dashboard listing
-│   │   ├── components/          # React components
-│   │   │   ├── layout/          # Sidebar.tsx, Header.tsx
-│   │   │   ├── create/          # FileUpload.tsx, QuestionConfig.tsx
-│   │   │   └── assessment/      # QuestionPaper.tsx, ActionBar.tsx
-│   │   ├── store/               # Zustand useAssessmentStore
-│   │   └── hooks/               # WebSocket useWebSocket hook
-│   └── globals.css              # Custom Dark-Mode Stylesheet
-│
-├── backend/                     # Express.js Server
-│   ├── src/
-│   │   ├── config/              # MongoDB & Redis client boot
-│   │   ├── models/              # Mongoose schema definitions
-│   │   ├── routes/              # Express endpoint controllers
-│   │   ├── queues/              # BullMQ queue & worker workers
-│   │   └── services/            # Gemini Prompt builder & jsPDF generator
-│   └── tsconfig.json
-│
-├── docker-compose.yml           # Redis container setup
-└── README.md
-```
-
----
-
-## 🎨 Layout & Design Approach
-
-The layout is built with a premium high-contrast design system featuring:
-- **Navigation Sidebar:** A white background (`#ffffff`) matching the Figma specification, featuring a custom orange brand icon, capsule outline CTA, and an active school information badge showing "Delhi Public School, Bokaro Steel City" at the bottom.
-- **Glassmorphism:** Form blocks use semi-transparent white borders and overlays with blur backdrops.
-- **Document View:** The generated question paper is rendered as a clean, high-contrast cream white paper element floating on the dark page layout to replicate a physical test sheet preview.
-- **Micro-animations:** Hover scales on primary actions, pulse indicators on generating phases, and shimmer loaders on fetching states.
+- `join:assignment` — Joins the Socket.io room using the target assessment ID.
+- `generation:progress` — Emits real-time state logs:
+  - `Analyzing requirements...`
+  - `Generating questions...`
+  - `Formatting paper...`
+- `generation:completed` — Returns the full structured question paper JSON.
+- `generation:failed` — Dispatches error logs if generation fails.
