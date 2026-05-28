@@ -159,7 +159,7 @@ docker-compose up -d
    MONGODB_URI=mongodb://localhost:27017/vedaai
    REDIS_HOST=localhost
    REDIS_PORT=6379
-   GEMINI_API_KEY=AIzaSyBPcgh7rTAgjspnC1e58UVRmkiJFI2K75o
+   GEMINI_API_KEY=YOUR_GEMINI_API_KEY
    CORS_ORIGIN=http://localhost:3000
    ```
 3. Install and run in development mode:
