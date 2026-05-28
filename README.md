@@ -21,34 +21,34 @@ Below is the architectural diagram mapping the client-server interactions, AI pi
 ```mermaid
 graph TD
     %% Frontend Layer
-    subgraph Frontend [Next.js Client (Port 3000)]
-        UI[Form UI & Dashboard] <--> Store[Zustand Store]
-        Store <--> WS_Client[Socket.IO Client]
+    subgraph Frontend ["Next.js Client (Port 3000)"]
+        UI["Form UI & Dashboard"] --- Store["Zustand Store"]
+        Store --- WS_Client["Socket.IO Client"]
     end
 
     %% Backend Layer
-    subgraph Backend [Express API Server (Port 5000)]
-        Routes[API Router]
-        IO[Socket.IO Server]
+    subgraph Backend ["Express API Server (Port 5000)"]
+        Routes["API Router"]
+        IO["Socket.IO Server"]
         
         %% Fallback System
-        subgraph Fallback_System [Robust Job Queue System]
-            Queue[BullMQ Queue Manager]
-            LocalRunner[Local In-Memory Runner]
-            Worker[BullMQ Workers]
+        subgraph Fallback_System ["Robust Job Queue System"]
+            Queue["BullMQ Queue Manager"]
+            LocalRunner["Local In-Memory Runner"]
+            Worker["BullMQ Workers"]
         end
         
-        Services[AI & PDF Services]
+        Services["AI & PDF Services"]
     end
 
     %% Infrastructure & External APIs
-    subgraph Databases [Data Storage]
-        DB[(MongoDB Database)]
-        Cache[(Redis Cache Server)]
+    subgraph Databases ["Data Storage"]
+        DB[("MongoDB Database")]
+        Cache[("Redis Cache Server")]
     end
 
-    subgraph External [AI Models]
-        Gemini[Google Gemini 2.5 Flash]
+    subgraph External ["AI Models"]
+        Gemini["Google Gemini 2.5 Flash"]
     end
 
     %% Flows
