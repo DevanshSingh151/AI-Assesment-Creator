@@ -13,6 +13,75 @@ export function useWebSocket(assignmentId: string | null) {
   useEffect(() => {
     if (!assignmentId) return;
 
+    let isMounted = true;
+    let pollInterval: NodeJS.Timeout | null = null;
+
+    const handleCompleted = async (id: string) => {
+      setGenerationMessage('Assessment generated successfully!');
+      setGenerationStatus('completed');
+      try {
+        const assignment = await getAssignment(id);
+        if (!isMounted) return;
+        setAssignment(assignment);
+        addNotification({
+          title: 'Generation Completed 🎉',
+          message: `"${assignment.title}" is ready!`,
+          link: `/assessment/${assignment._id}`,
+        });
+      } catch {
+        if (!isMounted) return;
+        addNotification({
+          title: 'Generation Completed 🎉',
+          message: 'Your assessment is ready!',
+          link: `/assessment/${id}`,
+        });
+      }
+    };
+
+    const handleFailed = (errorMsg: string) => {
+      setGenerationMessage(errorMsg || 'Generation failed');
+      setGenerationStatus('failed');
+      addNotification({
+        title: 'Generation Failed ⚠️',
+        message: errorMsg || 'An assessment failed to generate.',
+        link: '#',
+      });
+    };
+
+    const checkStatus = async () => {
+      try {
+        const assignment = await getAssignment(assignmentId);
+        if (!isMounted) return false;
+
+        if (assignment.status === 'completed') {
+          if (pollInterval) clearInterval(pollInterval);
+          await handleCompleted(assignmentId);
+          return true;
+        } else if (assignment.status === 'failed') {
+          if (pollInterval) clearInterval(pollInterval);
+          handleFailed(assignment.error || 'Generation failed');
+          return true;
+        } else if (assignment.status === 'processing') {
+          setGenerationMessage('Generating questions with AI...');
+          setGenerationStatus('processing');
+        }
+      } catch (error) {
+        console.error('Error fetching assignment status:', error);
+      }
+      return false;
+    };
+
+    // Run initial check immediately
+    checkStatus();
+
+    // Start polling fallback
+    pollInterval = setInterval(async () => {
+      const isDone = await checkStatus();
+      if (isDone && pollInterval) {
+        clearInterval(pollInterval);
+      }
+    }, 3000);
+
     const socket = getSocket();
 
     const onConnect = () => {
@@ -34,33 +103,13 @@ export function useWebSocket(assignmentId: string | null) {
     };
 
     const onCompleted = async (data: { assignmentId: string }) => {
-      setGenerationMessage('Assessment generated successfully!');
-      setGenerationStatus('completed');
-      try {
-        const assignment = await getAssignment(data.assignmentId);
-        setAssignment(assignment);
-        addNotification({
-          title: 'Generation Completed 🎉',
-          message: `"${assignment.title}" is ready!`,
-          link: `/assessment/${assignment._id}`,
-        });
-      } catch {
-        addNotification({
-          title: 'Generation Completed 🎉',
-          message: 'Your assessment is ready!',
-          link: `/assessment/${data.assignmentId}`,
-        });
-      }
+      if (pollInterval) clearInterval(pollInterval);
+      await handleCompleted(data.assignmentId);
     };
 
     const onFailed = (data: { error: string }) => {
-      setGenerationMessage(data.error || 'Generation failed');
-      setGenerationStatus('failed');
-      addNotification({
-        title: 'Generation Failed ⚠️',
-        message: data.error || 'An assessment failed to generate.',
-        link: '#',
-      });
+      if (pollInterval) clearInterval(pollInterval);
+      handleFailed(data.error);
     };
 
     socket.on('connect', onConnect);
@@ -76,6 +125,9 @@ export function useWebSocket(assignmentId: string | null) {
     }
 
     return () => {
+      isMounted = false;
+      if (pollInterval) clearInterval(pollInterval);
+
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       socket.off('generation:progress', onProgress);

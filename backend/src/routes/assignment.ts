@@ -5,6 +5,7 @@ import { Assignment } from '../models/Assignment';
 import { assessmentQueue } from '../queues/queue';
 import { generatePDF } from '../services/pdf.service';
 import { runAssignmentGenerationLocal } from '../queues/worker';
+import { generateQuestionPaper } from '../services/ai.service';
 import { CreateAssignmentDTO, GenerationJobData } from '../types';
 
 const router = Router();
@@ -75,6 +76,29 @@ async function queueOrRunJob(assignmentId: string, formData: CreateAssignmentDTO
     // Run locally in background (do not await)
     runAssignmentGenerationLocal(assignmentId, formData);
     return `local-${assignmentId}-${Date.now()}`;
+  }
+}
+
+async function handleSynchronousGeneration(assignment: any, formData: CreateAssignmentDTO): Promise<void> {
+  console.log(`⚡ Running synchronous generation for assignment: ${assignment._id}`);
+  try {
+    assignment.status = 'processing';
+    await assignment.save();
+
+    const generatedPaper = await generateQuestionPaper(formData);
+
+    assignment.status = 'completed';
+    assignment.generatedPaper = generatedPaper;
+    assignment.error = undefined;
+    await assignment.save();
+    console.log(`✅ Synchronous generation completed successfully for assignment: ${assignment._id}`);
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(`❌ Synchronous generation failed for assignment: ${assignment._id}`, errorMsg);
+    assignment.status = 'failed';
+    assignment.error = errorMsg;
+    await assignment.save();
+    throw error;
   }
 }
 
@@ -159,6 +183,26 @@ router.post('/', upload.single('file'), async (req: Request, res: Response): Pro
       uploadedFileContent: formData.uploadedFileContent,
       status: 'pending',
     });
+
+    // If running on Vercel (serverless environment), run generation synchronously
+    if (process.env.VERCEL) {
+      try {
+        await handleSynchronousGeneration(assignment, formData);
+        res.status(201).json({
+          success: true,
+          assignmentId: assignment._id.toString(),
+          jobId: 'vercel-sync',
+          message: 'Assignment created and generated successfully.',
+        });
+      } catch (genError) {
+        const errorMsg = genError instanceof Error ? genError.message : String(genError);
+        res.status(500).json({
+          success: false,
+          error: `AI Generation failed: ${errorMsg}`,
+        });
+      }
+      return;
+    }
 
     // Queue job with fallback
     const jobId = await queueOrRunJob(assignment._id.toString(), formData, false);
@@ -261,6 +305,25 @@ router.post('/:id/regenerate', async (req: Request, res: Response): Promise<void
       additionalInstructions: assignment.additionalInstructions,
       uploadedFileContent: assignment.uploadedFileContent,
     };
+
+    // If running on Vercel (serverless environment), run generation synchronously
+    if (process.env.VERCEL) {
+      try {
+        await handleSynchronousGeneration(assignment, formData);
+        res.json({
+          success: true,
+          jobId: 'vercel-sync',
+          message: 'Regeneration completed successfully.',
+        });
+      } catch (genError) {
+        const errorMsg = genError instanceof Error ? genError.message : String(genError);
+        res.status(500).json({
+          success: false,
+          error: `AI Regeneration failed: ${errorMsg}`,
+        });
+      }
+      return;
+    }
 
     // Queue job with fallback
     const jobId = await queueOrRunJob(assignment._id.toString(), formData, true);

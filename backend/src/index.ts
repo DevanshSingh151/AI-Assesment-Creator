@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
+import mongoose from 'mongoose';
 import { connectDB } from './config/db';
 import { assignmentRoutes } from './routes/assignment';
 import { initWorker } from './queues/worker';
@@ -28,7 +29,12 @@ app.use('/api/assignments', assignmentRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.json({ 
+    status: 'ok', 
+    database: dbStatus,
+    timestamp: new Date().toISOString() 
+  });
 });
 
 // Socket.IO
