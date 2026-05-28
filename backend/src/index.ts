@@ -59,4 +59,11 @@ const start = async () => {
   });
 };
 
-start().catch(console.error);
+if (!process.env.VERCEL) {
+  start().catch(console.error);
+} else {
+  // Lazily connect to DB for Vercel serverless invocations
+  connectDB().catch(console.error);
+}
+
+export default app;
